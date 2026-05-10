@@ -1,0 +1,84 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "commerce.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    # Strip the /remotes/<app> prefix before forwarding to upstream nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # Enable CORS for Module Federation cross-origin asset requests
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .Values.ingress.host }}"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Origin, Accept, Content-Type"
+    # Proxy timeouts for SSE / long polling if added later
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+spec:
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # ── Host MFE (catch-all — must be last) ──────────────────────────
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: host
+                port:
+                  name: http
+
+          # ── Remote MFEs (static assets + remoteEntry.js) ─────────────────
+          - path: /remotes/catalog(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: catalog
+                port:
+                  name: http
+
+          - path: /remotes/cart(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: cart
+                port:
+                  name: http
+
+          - path: /remotes/auth-app(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-app
+                port:
+                  name: http
+
+          # ── Backend API routes ────────────────────────────────────────────
+          # /api/products/* → product-service /products/*
+          - path: /api/products(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: product-service
+                port:
+                  number: {{ (index .Values.backend "product-service").port }}
+
+          # /api/auth/* → auth-service /auth/*
+          - path: /api/auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: {{ (index .Values.backend "auth-service").port }}
+{{- end }}

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: commerce-platform
+description: Scalable micro-frontend commerce platform (host + 3 MFEs + 2 backend services)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - commerce
+  - micro-frontend
+  - module-federation
+maintainers:
+  - name: Vladyslav Pogorielov

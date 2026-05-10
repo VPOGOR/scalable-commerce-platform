@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "commerce.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce.labels" . | nindent 4 }}
+data:
+  # Public ingress host — used by MFEs to resolve remote entry URLs at runtime
+  PLATFORM_HOST: {{ .Values.ingress.host | quote }}
+  # Injected into nginx env for MFE remote URL resolution if needed
+  CATALOG_REMOTE_URL: "http://{{ .Values.ingress.host }}/remotes/catalog/assets/remoteEntry.js"
+  CART_REMOTE_URL: "http://{{ .Values.ingress.host }}/remotes/cart/assets/remoteEntry.js"
+  AUTH_REMOTE_URL: "http://{{ .Values.ingress.host }}/remotes/auth-app/assets/remoteEntry.js"

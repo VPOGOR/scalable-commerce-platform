@@ -1,0 +1,129 @@
+global:
+  imageRegistry: ghcr.io
+  imageRepository: myorg/scalable-commerce-platform
+
+# ─── Backend Node.js services ──────────────────────────────────────────────
+backend:
+  product-service:
+    image: product-service
+    tag: latest
+    port: 4001
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPU: 70
+    env:
+      PORT: "4001"
+      NODE_ENV: production
+    secretEnv: {}
+
+  auth-service:
+    image: auth-service
+    tag: latest
+    port: 4002
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+    env:
+      PORT: "4002"
+      NODE_ENV: production
+    secretEnv:
+      JWT_SECRET:
+        secretName: commerce-secrets
+        key: jwt-secret
+
+# ─── Frontend MFEs (nginx static) ──────────────────────────────────────────
+frontend:
+  host:
+    image: host
+    tag: latest
+    port: 80
+    replicas: 2
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  catalog:
+    image: catalog
+    tag: latest
+    port: 80
+    replicas: 2
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  cart:
+    image: cart
+    tag: latest
+    port: 80
+    replicas: 2
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  auth-app:
+    image: auth
+    tag: latest
+    port: 80
+    replicas: 2
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+# ─── Ingress ────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: platform.example.com
+  tls:
+    enabled: false
+    secretName: commerce-tls
+
+# ─── Secrets ────────────────────────────────────────────────────────────────
+# Override via: helm upgrade --set secrets.jwtSecret=<value>
+# Production: use External Secrets Operator + AWS Secrets Manager
+secrets:
+  jwtSecret: "dev-secret-change-before-production"
+
+# ─── Monitoring ─────────────────────────────────────────────────────────────
+monitoring:
+  enabled: true
+  # Label selector used by Prometheus Operator to discover ServiceMonitors
+  prometheusRelease: kube-prometheus-stack
+  # Scrape interval for /metrics endpoints
+  interval: 30s
