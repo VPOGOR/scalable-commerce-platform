@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Скрейпить сам Prometheus (self-monitoring)
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Metrics service — збирає Web Vitals з браузера і конвертує в Prometheus формат
+  # Браузер → POST /vitals → metrics-service → GET /metrics ← Prometheus
+  - job_name: 'web-vitals'
+    static_configs:
+      - targets: ['metrics-service:4000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Node.js сервіси (коли будуть реалізовані)
+  - job_name: 'product-service'
+    static_configs:
+      - targets: ['product-service:4001']
+    metrics_path: '/metrics'
+
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:4002']
+    metrics_path: '/metrics'
