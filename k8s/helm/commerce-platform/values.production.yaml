@@ -1,0 +1,60 @@
+# Production overrides — apply with: helm upgrade -f values.production.yaml
+# Secrets must be provided externally (External Secrets Operator or --set)
+
+global:
+  imageRegistry: ghcr.io
+  imageRepository: myorg/scalable-commerce-platform
+
+backend:
+  product-service:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+    hpa:
+      minReplicas: 3
+      maxReplicas: 20
+
+  auth-service:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+    hpa:
+      minReplicas: 3
+      maxReplicas: 15
+
+frontend:
+  host:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+  catalog:
+    replicas: 3
+  cart:
+    replicas: 3
+  auth-app:
+    replicas: 3
+
+ingress:
+  host: platform.yourdomain.com
+  tls:
+    enabled: true
+    secretName: commerce-tls
+
+secrets:
+  jwtSecret: ""  # REQUIRED: set via CI secret or External Secrets Operator
